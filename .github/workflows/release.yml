@@ -69,7 +69,8 @@ jobs:
           sudo apt-get install -y --no-install-recommends \
             asciidoctor \
             zsh xz-utils liblz4-tool musl-tools \
-            brotli zstd
+            brotli zstd \
+            libxcb-render0-dev libxcb-shape0-dev libxcb-xfixes0-dev libxkbcommon-dev libssl-dev
 
       - name: Install rust
         uses: dtolnay/rust-toolchain@master
@@ -92,7 +93,7 @@ jobs:
           binary_name="document-uploader"
           dirname="$binary_name-${{ needs.create-release.outputs.version}}-${{ matrix.target }}"
           if [ "${{ matrix.os }}" = "windows-latest" ]; then
-            binary_name="document-upload-cli.exe"
+            binary_name="document-uploader.exe"
           fi
           mv "target/${{ matrix.target }}/release/$binary_name" $binary_name
           if [ "${{ matrix.os }}" = "windows-latest" ]; then
