@@ -47,8 +47,10 @@ async fn main() -> Result<()> {
                 }
             }
             if ui.button("upload").clicked() {
+                let mut uploaded_document_count = 0;
                 for folder in &folders {
                     if drive_hub.upload_document_blocking(folder).is_ok() {
+                        uploaded_document_count += 1;
                         continue;
                     }
 
@@ -62,6 +64,13 @@ async fn main() -> Result<()> {
                         .show()
                         .unwrap();
                 }
+
+                Notification::new()
+                    .summary("Upload summary")
+                    .body(&format!("{} document uploaded", uploaded_document_count))
+                    .timeout(0)
+                    .show()
+                    .unwrap();
             }
         });
     })
