@@ -1,13 +1,38 @@
-use anyhow::{bail, Result};
+use anyhow::bail;
 use drive::{
     hyper::{self, client::HttpConnector},
     hyper_rustls::{self, HttpsConnector},
     oauth2,
 };
 use futures::executor;
+use google_drive3::oauth2::authenticator_delegate::{
+    DefaultInstalledFlowDelegate, InstalledFlowDelegate,
+};
 use std::{fs, path::Path, str::FromStr};
 
 use crate::{description::Description, empty_file::EmptyFile};
+
+async fn browser_user_url(url: &str, need_code: bool) -> Result<String, String> {
+    if open::that(url).is_ok() {
+        println!("webbrowser was successfully opened.");
+    }
+    let def_delegate = DefaultInstalledFlowDelegate;
+    def_delegate.present_user_url(url, need_code).await
+}
+
+#[derive(Copy, Clone)]
+struct InstalledFlowBrowserDelegate;
+
+impl InstalledFlowDelegate for InstalledFlowBrowserDelegate {
+    fn present_user_url<'a>(
+        &'a self,
+        url: &'a str,
+        need_code: bool,
+    ) -> std::pin::Pin<Box<dyn futures::prelude::Future<Output = Result<String, String>> + Send + 'a>>
+    {
+        Box::pin(browser_user_url(url, need_code))
+    }
+}
 
 pub struct DriveHub {
     instance: drive::DriveHub<HttpsConnector<HttpConnector>>,
@@ -24,6 +49,7 @@ impl DriveHub {
             oauth2::InstalledFlowReturnMethod::HTTPPortRedirect(8001),
         )
         .persist_tokens_to_disk(cache_folder.join("auth"))
+        .flow_delegate(Box::new(InstalledFlowBrowserDelegate))
         .build()
         .await?;
 
